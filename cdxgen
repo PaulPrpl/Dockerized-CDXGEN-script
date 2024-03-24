@@ -1,0 +1,21 @@
+#!/bin/bash
+
+INPUT="${1:-$PWD}"
+SCANDIR="${INPUT##*/}"
+OUTPUT="$PWD"
+TS=`date +%s`
+SBOM="cdxgensbom-${SCANDIR}-${TS}.json"
+container_name="cdxgenscan_$TS"
+
+if [ $# -ge 2 ]
+then
+	OUTPUT="$2"
+elif [ $# -gt 2  ]
+then
+	echo 'Two parameters max awaited. Exiting' >&2
+	exit 1
+fi
+
+docker run --name "$container_name" -it -v "$INPUT":/"$SCANDIR" -e CDXGEN_DEBUG=true cdxgen sh -c "cd /$SCANDIR && cdxgen -r -o /tmp/$SBOM"
+docker cp "$container_name":/tmp/"$SBOM" $OUTPUT
+docker rm "$container_name"
